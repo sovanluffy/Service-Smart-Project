@@ -3,6 +3,8 @@ package com.rental_api.ServiceBooking.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.rental_api.ServiceBooking.Entity.*;  // or your exact package
+import com.rental_api.ServiceBooking.Entity.Role;
 
 @Entity
 @Table(name = "user_roles")
