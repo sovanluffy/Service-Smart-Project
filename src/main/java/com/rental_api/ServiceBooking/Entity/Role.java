@@ -7,37 +7,26 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "users")
+@Table(name = "roles")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String fullname;
+    @Column(unique = true)
+    private String name; // ADMIN, PROVIDER, CUSTOMER
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    private String password;
-
-    @Column(unique = true, length = 20)
-    private String phone;
-
-    @Column(columnDefinition = "TEXT")
-    private String address;
-
-    private String location;
+    private String description;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<UserRole> userRoles = new HashSet<>();
