@@ -1,6 +1,7 @@
 package com.rental_api.ServiceBooking.Dto.Request;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Data
@@ -9,21 +10,19 @@ import lombok.*;
 @Builder
 public class RegisterRequest {
 
-    @Schema(description = "Full name of the user", example = "Sok Dara", required = true)
+    @NotBlank(message = "Fullname is required")
     private String fullname;
 
-    @Schema(description = "Email address", example = "dara@gmail.com", required = true)
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email is invalid")
     private String email;
 
-    @Schema(description = "Password", example = "123456", required = true)
+    @NotBlank(message = "Password is required")
     private String password;
 
-    @Schema(description = "Phone number", example = "012345678")
     private String phone;
-
-    @Schema(description = "Address", example = "Phnom Penh")
     private String address;
-
-    @Schema(description = "Location", example = "Cambodia")
     private String location;
+
+    // getters and setters
 }

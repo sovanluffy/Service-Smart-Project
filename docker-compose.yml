@@ -7,6 +7,11 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      # Specifically setting these so Postgres initializes correctly
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5432"   # fix port mapping
     volumes:
@@ -20,16 +25,19 @@ services:
   rental:
     build: .
     container_name: smart-services-app
-    env_file:
-      - .env
-    ports:
-      - "${APP_PORT}:8080"
-    volumes:
-      - ./uploads:/app/uploads
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
+    ports:
+      - "${APP_PORT}:8080"
+    env_file:
+      - .env
+    # DB_HOST=postgres tells the app to look for the container named 'postgres'
+    environment:
+      - DB_HOST=postgres
+    volumes:
+      - ./${FILE_UPLOAD_DIR}:/app/${FILE_UPLOAD_DIR}
 
 volumes:
   postgres_data:
