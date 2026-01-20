@@ -14,40 +14,41 @@ import java.util.List;
 @Component
 public class JwtUtils {
 
+    public static final String CLAIM_USER_ID = "userId";
+    public static final String CLAIM_EMAIL = "email";
+    public static final String CLAIM_ROLES = "roles";
+    public static final String CLAIM_ROLE_IDS = "roleIds";
+
     private final Key key;
     private final long expiration;
-
-    private static final String CLAIM_USER_ID = "userId";
-    private static final String CLAIM_EMAIL = "email";
-    private static final String CLAIM_ROLES = "roles";
-    private static final String CLAIM_ROLE_IDS = "roleIds";
 
     public JwtUtils(
             @Value("${jwt.secret}") String secret,
             @Value("${jwt.expiration}") long expiration
     ) {
-        if (secret.length() < 64) {
-            throw new IllegalStateException("JWT secret must be at least 64 characters");
+        // Java 21 allows cleaner validation
+        if (secret == null || secret.isBlank() || secret.length() < 64) {
+            throw new IllegalStateException("JWT secret must be at least 64 characters (512 bits)");
         }
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
         this.expiration = expiration;
-        log.info("JWT initialized with expiration {} ms", expiration);
     }
 
     public String generateToken(Long userId, String email, String username, List<String> roles, List<Long> roleIds) {
+        long now = System.currentTimeMillis();
         return Jwts.builder()
                 .setSubject(username)
                 .claim(CLAIM_USER_ID, userId)
                 .claim(CLAIM_EMAIL, email)
                 .claim(CLAIM_ROLES, roles)
                 .claim(CLAIM_ROLE_IDS, roleIds)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setIssuedAt(new Date(now))
+                .setExpiration(new Date(now + expiration))
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
     }
 
-    public Claims getClaims(String token) throws JwtException {
+    public Claims getClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
@@ -57,12 +58,11 @@ public class JwtUtils {
 
     public boolean validateToken(String token) {
         try {
-            Claims claims = getClaims(token);
-            return claims.getExpiration().after(new Date());
+            return getClaims(token).getExpiration().after(new Date());
         } catch (ExpiredJwtException e) {
-            log.warn("JWT expired: {}", e.getMessage());
+            log.warn("JWT expired");
         } catch (JwtException | IllegalArgumentException e) {
-            log.warn("Invalid JWT token: {}", e.getMessage());
+            log.warn("Invalid JWT: {}", e.getMessage());
         }
         return false;
     }

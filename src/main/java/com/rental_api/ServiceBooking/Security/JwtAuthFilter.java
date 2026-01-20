@@ -6,8 +6,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,15 +21,24 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthFilter.class);
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) 
+            throws ServletException, IOException {
+        
+        String path = request.getRequestURI();
 
+        // 1. FAST PASS: Bypass Swagger and Auth immediately to prevent 403 errors
+        if (path.contains("/auth") || 
+            path.contains("/v3/api-docs") || 
+            path.contains("/swagger-ui") || 
+            path.contains("/swagger-config")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 2. EXTRACT TOKEN: Check for Authorization header
         String header = request.getHeader("Authorization");
-
         if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -39,43 +46,37 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring(7);
 
+        // 3. VALIDATE AND SET AUTHENTICATION
         try {
-            if (!jwtUtils.validateToken(token)) {
-                logger.warn("Invalid JWT token");
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
-                return;
+            if (jwtUtils.validateToken(token)) {
+                Claims claims = jwtUtils.getClaims(token);
+                String username = claims.getSubject();
+                
+                // Get roles from the token (assumes roles are stored as a List in JWT)
+                @SuppressWarnings("unchecked")
+                List<String> roles = claims.get("roles", List.class);
+                
+                // Convert roles to Spring Authorities
+                List<SimpleGrantedAuthority> authorities = roles != null ? 
+                    roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList() : 
+                    List.of();
+
+                // Create Authentication object for Spring Security
+                UsernamePasswordAuthenticationToken auth = 
+                    new UsernamePasswordAuthenticationToken(username, null, authorities);
+                
+                // Link request details (IP, Session ID) to the auth object
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                
+                // Save the user to the Security Context for the rest of the request
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
-
-            Claims claims = jwtUtils.getClaims(token);
-
-            String email = claims.get("email", String.class);
-            if (email == null) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT token missing email");
-                return;
-            }
-
-            List<String> roles = ((List<?>) claims.get("roles"))
-                    .stream()
-                    .map(Object::toString)
-                    .toList();
-
-            var authorities = roles.stream()
-                    .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
-                    .toList();
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(email, null, authorities);
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            logger.info("JWT validated for user: {}", email);
-
         } catch (Exception e) {
-            logger.error("Failed to authenticate JWT: {}", e.getMessage());
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Failed to authenticate JWT");
-            return;
+            // If token is expired or malformed, ensure context is clean
+            SecurityContextHolder.clearContext();
         }
 
+        // 4. CONTINUE: Move to the next filter in the chain
         filterChain.doFilter(request, response);
     }
 }

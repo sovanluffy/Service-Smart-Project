@@ -1,13 +1,14 @@
 package com.rental_api.ServiceBooking.Dto.Response;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Builder;
+import lombok.NoArgsConstructor; // Add this
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor // Fixes the compilation error
 @Builder
 public class AuthResponse {
 
@@ -23,7 +24,6 @@ public class AuthResponse {
     @Schema(description = "Response message", example = "Registered successfully")
     private String message;
 
-    // Optional for JWT login
-    @Schema(description = "JWT Token (for login only)", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+    @Schema(description = "JWT Token", example = "eyJhbGciOiJIUzI1Ni...")
     private String token;
 }

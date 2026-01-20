@@ -8,16 +8,15 @@ services:
     env_file:
       - .env
     environment:
-      # Specifically setting these so Postgres initializes correctly
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
-      - "5432"   # fix port mapping
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -33,9 +32,19 @@ services:
       - "${APP_PORT}:8080"
     env_file:
       - .env
-    # DB_HOST=postgres tells the app to look for the container named 'postgres'
     environment:
       - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_SSLMODE=disable
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      # Matches your Java Security Whitelist
+      - SPRING_THREADS_VIRTUAL_ENABLED=true
+      - SPRINGDOC_API_DOCS_PATH=/api-docs
+      - SPRINGDOC_SWAGGER_UI_PATH=/swagger
     volumes:
       - ./${FILE_UPLOAD_DIR}:/app/${FILE_UPLOAD_DIR}
 
