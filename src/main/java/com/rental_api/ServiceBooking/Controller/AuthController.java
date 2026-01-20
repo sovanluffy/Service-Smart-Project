@@ -21,7 +21,7 @@ public class AuthController {
 
     // --- REGISTER ---
     @PostMapping("/register")
-    @Operation(summary = "Register a new user", description = "Creates a new user and returns JWT token")
+    @Operation(summary = "Register  new user", description = "Creates a new user and returns JWT token")
     public ResponseEntity<ApiResponse<AuthResponse>> register(
             @Valid @RequestBody RegisterRequest request
     ) {
