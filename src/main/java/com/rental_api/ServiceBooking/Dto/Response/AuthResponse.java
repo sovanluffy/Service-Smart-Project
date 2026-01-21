@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor; // Add this
+
+import java.util.List;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Data
@@ -26,4 +29,6 @@ public class AuthResponse {
 
     @Schema(description = "JWT Token", example = "eyJhbGciOiJIUzI1Ni...")
     private String token;
+     private List<String> roles;
+    private List<Long> roleIds;
 }

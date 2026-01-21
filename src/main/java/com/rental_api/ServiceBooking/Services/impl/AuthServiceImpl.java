@@ -5,13 +5,11 @@ import com.rental_api.ServiceBooking.Dto.Request.RegisterRequest;
 import com.rental_api.ServiceBooking.Dto.Response.AuthResponse;
 import com.rental_api.ServiceBooking.Entity.Role;
 import com.rental_api.ServiceBooking.Entity.User;
-import com.rental_api.ServiceBooking.Entity.UserRole;
 import com.rental_api.ServiceBooking.Exception.ConflictException;
 import com.rental_api.ServiceBooking.Repository.RoleRepository;
 import com.rental_api.ServiceBooking.Repository.UserRepository;
-import com.rental_api.ServiceBooking.Repository.UserRoleRepository;
-import com.rental_api.ServiceBooking.Security.JwtUtils;
 import com.rental_api.ServiceBooking.Services.AuthService;
+import com.rental_api.ServiceBooking.Security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -28,7 +27,6 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
 
@@ -41,18 +39,17 @@ public class AuthServiceImpl implements AuthService {
             throw new ConflictException("Email already exists");
         }
 
-        // 1. Create User and Hash Password
-        User user = new User();
-        user.setFullname(request.getFullname());
-        user.setEmail(request.getEmail());
-        // This uses the BCryptPasswordEncoder from your SecurityConfig
-        user.setPassword(passwordEncoder.encode(request.getPassword())); 
-        user.setPhone(request.getPhone());
-        user.setAddress(request.getAddress());
-        user.setLocation(request.getLocation());
-        user = userRepository.save(user);
+        // 1️⃣ Create User and Hash Password
+        User user = User.builder()
+                .fullname(request.getFullname())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .address(request.getAddress())
+                .location(request.getLocation())
+                .build();
 
-        // 2. Assign Default Role (CUSTOMER)
+        // 2️⃣ Assign Default Role (CUSTOMER)
         Role customerRole = roleRepository.findByName("CUSTOMER")
                 .orElseGet(() -> {
                     Role nr = new Role();
@@ -61,16 +58,18 @@ public class AuthServiceImpl implements AuthService {
                     return roleRepository.save(nr);
                 });
 
-        UserRole userRole = new UserRole();
-        userRole.setUser(user);
-        userRole.setRole(customerRole);
-        userRoleRepository.save(userRole);
+        // Assign role to user
+        user.setRoles(Set.of(customerRole));
+        user = userRepository.save(user); // save user with role
 
-        // 3. Generate JWT Token
-        List<String> roles = List.of(customerRole.getName());
-        List<Long> roleIds = List.of(customerRole.getId());
-        String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getEmail(), roles, roleIds);
+        // 3️⃣ Prepare roles for JWT and response
+        List<String> roleNames = user.getRoles().stream().map(Role::getName).toList();
+        List<Long> roleIds = user.getRoles().stream().map(Role::getId).toList();
 
+        // 4️⃣ Generate JWT Token
+        String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getEmail(), roleNames, roleIds);
+
+        // 5️⃣ Return AuthResponse
         return mapToAuthResponse(user, token, "Registered successfully");
     }
 
@@ -79,34 +78,31 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         log.info("Processing login for email: {}", request.getEmail());
 
-        // 1. Find User
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-        // 2. Check Password (Matches plain text with hashed)
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BadCredentialsException("Invalid email or password");
         }
 
-        // 3. Fetch User Roles
-        List<UserRole> userRoles = userRoleRepository.findByUser(user);
-        List<String> roleNames = userRoles.stream().map(ur -> ur.getRole().getName()).toList();
-        List<Long> roleIds = userRoles.stream().map(ur -> ur.getRole().getId()).toList();
+        List<String> roleNames = user.getRoles().stream().map(Role::getName).toList();
+        List<Long> roleIds = user.getRoles().stream().map(Role::getId).toList();
 
-        // 4. Generate Token
         String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getEmail(), roleNames, roleIds);
 
         return mapToAuthResponse(user, token, "Login successful");
     }
 
-    // Manual mapping (No Builder used)
+    // Map User entity to AuthResponse DTO
     private AuthResponse mapToAuthResponse(User user, String token, String message) {
-        AuthResponse response = new AuthResponse();
-        response.setUserId(user.getId());
-        response.setFullname(user.getFullname());
-        response.setEmail(user.getEmail());
-        response.setToken(token);
-        response.setMessage(message);
-        return response;
+        return AuthResponse.builder()
+                .userId(user.getId())
+                .fullname(user.getFullname())
+                .email(user.getEmail())
+                .message(message)
+                .token(token)
+                .roles(user.getRoles().stream().map(Role::getName).toList())
+                .roleIds(user.getRoles().stream().map(Role::getId).toList())
+                .build();
     }
 }
