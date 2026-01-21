@@ -2,7 +2,6 @@ package com.rental_api.ServiceBooking.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "service_providers")
@@ -21,9 +20,8 @@ public class ServiceProvider {
     private User user;
 
     private String bio;
-    private Integer experience;
-    private Float rating;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Double experience; // Changed from Integer to Double
+
+    private Float rating;
 }

@@ -1,8 +1,8 @@
 package com.rental_api.ServiceBooking.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,28 +17,23 @@ public class ProviderRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // FK to user
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
 
     private String bio;
-
-    private Integer experience;
-
-    private String status; // PENDING / APPROVED / REJECTED
+    private Double experience; // Double type
+    private String status;
 
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (status == null) {
-            status = "PENDING";
-        }
+        if (status == null) status = "PENDING";
     }
 
     @PreUpdate
