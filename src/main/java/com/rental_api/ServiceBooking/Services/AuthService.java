@@ -7,4 +7,5 @@ import com.rental_api.ServiceBooking.Dto.Response.AuthResponse;
 public interface AuthService {
     AuthResponse register(RegisterRequest request);
     AuthResponse login(LoginRequest request);
+        AuthResponse registerAdmin(RegisterRequest request);
 }

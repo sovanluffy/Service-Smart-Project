@@ -30,6 +30,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
 
+    // -------------------------------
+    // Register CUSTOMER
+    // -------------------------------
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -39,7 +42,6 @@ public class AuthServiceImpl implements AuthService {
             throw new ConflictException("Email already exists");
         }
 
-        // 1️⃣ Create User and Hash Password
         User user = User.builder()
                 .fullname(request.getFullname())
                 .email(request.getEmail())
@@ -49,7 +51,6 @@ public class AuthServiceImpl implements AuthService {
                 .location(request.getLocation())
                 .build();
 
-        // 2️⃣ Assign Default Role (CUSTOMER)
         Role customerRole = roleRepository.findByName("CUSTOMER")
                 .orElseGet(() -> {
                     Role nr = new Role();
@@ -58,21 +59,60 @@ public class AuthServiceImpl implements AuthService {
                     return roleRepository.save(nr);
                 });
 
-        // Assign role to user
         user.setRoles(Set.of(customerRole));
-        user = userRepository.save(user); // save user with role
+        user = userRepository.save(user);
 
-        // 3️⃣ Prepare roles for JWT and response
         List<String> roleNames = user.getRoles().stream().map(Role::getName).toList();
         List<Long> roleIds = user.getRoles().stream().map(Role::getId).toList();
 
-        // 4️⃣ Generate JWT Token
         String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getEmail(), roleNames, roleIds);
 
-        // 5️⃣ Return AuthResponse
         return mapToAuthResponse(user, token, "Registered successfully");
     }
 
+    // -------------------------------
+    // Register ADMIN
+    // -------------------------------
+    @Override
+    @Transactional
+    public AuthResponse registerAdmin(RegisterRequest request) {
+        log.info("Processing ADMIN registration for email: {}", request.getEmail());
+
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new ConflictException("Email already exists");
+        }
+
+        User user = User.builder()
+                .fullname(request.getFullname())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .address(request.getAddress())
+                .location(request.getLocation())
+                .build();
+
+        Role adminRole = roleRepository.findByName("ADMIN")
+                .orElseGet(() -> {
+                    Role role = new Role();
+                    role.setName("ADMIN");
+                    role.setDescription("System Administrator");
+                    return roleRepository.save(role);
+                });
+
+        user.setRoles(Set.of(adminRole));
+        user = userRepository.save(user);
+
+        List<String> roleNames = user.getRoles().stream().map(Role::getName).toList();
+        List<Long> roleIds = user.getRoles().stream().map(Role::getId).toList();
+
+        String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getEmail(), roleNames, roleIds);
+
+        return mapToAuthResponse(user, token, "Admin registered successfully");
+    }
+
+    // -------------------------------
+    // Login
+    // -------------------------------
     @Override
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
@@ -93,7 +133,9 @@ public class AuthServiceImpl implements AuthService {
         return mapToAuthResponse(user, token, "Login successful");
     }
 
+    // -------------------------------
     // Map User entity to AuthResponse DTO
+    // -------------------------------
     private AuthResponse mapToAuthResponse(User user, String token, String message) {
         return AuthResponse.builder()
                 .userId(user.getId())
