@@ -1,14 +1,18 @@
 package com.rental_api.ServiceBooking.Controller;
 
 import com.rental_api.ServiceBooking.Dto.Request.ProviderRequestDto;
-import com.rental_api.ServiceBooking.Dto.Response.ApiResponse;
+import com.rental_api.ServiceBooking.Dto.Response.BaseResponse;
 import com.rental_api.ServiceBooking.Dto.Response.ProviderRequestResponse;
 import com.rental_api.ServiceBooking.Services.ProviderRequestService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+// import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -32,29 +36,31 @@ public class ProviderRequestController {
                             description = "Provider request created successfully",
                             content = @Content(
                                     mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = ApiResponse.class)
+                                    schema = @Schema(implementation = BaseResponse.class)
                             )
                     ),
                     @ApiResponse(
                             responseCode = "404",
-                            description = "User not found",
-                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
+                            description = "User not found"
                     ),
                     @ApiResponse(
                             responseCode = "409",
-                            description = "Conflict: pending request exists",
-                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
+                            description = "Conflict: pending request exists"
                     )
             }
     )
     @PostMapping
-    public ResponseEntity<ApiResponse<ProviderRequestResponse>> createRequest(
+    public ResponseEntity<BaseResponse<ProviderRequestResponse>> createRequest(
             @RequestBody ProviderRequestDto dto,
             Authentication authentication
     ) {
         String email = authentication.getName();
-        ProviderRequestResponse response = providerRequestService.createRequest(dto, email);
-        return ResponseEntity.ok(ApiResponse.success(response, "Provider request created successfully"));
+        ProviderRequestResponse response =
+                providerRequestService.createRequest(dto, email);
+
+        return ResponseEntity.ok(
+                BaseResponse.success(response, "Provider request created successfully")
+        );
     }
 
     @Operation(
@@ -66,15 +72,19 @@ public class ProviderRequestController {
                             description = "List retrieved successfully",
                             content = @Content(
                                     mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = ApiResponse.class)
+                                    schema = @Schema(implementation = BaseResponse.class)
                             )
                     )
             }
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ProviderRequestResponse>>> getAllRequests() {
-        List<ProviderRequestResponse> requests = providerRequestService.getAllRequests();
-        return ResponseEntity.ok(ApiResponse.success(requests, "All provider requests retrieved successfully"));
+    public ResponseEntity<BaseResponse<List<ProviderRequestResponse>>> getAllRequests() {
+        List<ProviderRequestResponse> requests =
+                providerRequestService.getAllRequests();
+
+        return ResponseEntity.ok(
+                BaseResponse.success(requests, "All provider requests retrieved successfully")
+        );
     }
 
     @Operation(
@@ -86,26 +96,28 @@ public class ProviderRequestController {
                             description = "Provider request approved successfully",
                             content = @Content(
                                     mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = ApiResponse.class)
+                                    schema = @Schema(implementation = BaseResponse.class)
                             )
                     ),
                     @ApiResponse(
                             responseCode = "404",
-                            description = "Request not found",
-                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
+                            description = "Request not found"
                     ),
                     @ApiResponse(
                             responseCode = "409",
-                            description = "Conflict: request already approved",
-                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
+                            description = "Conflict: request already approved"
                     )
             }
     )
     @PostMapping("/approve/{requestId}")
-    public ResponseEntity<ApiResponse<ProviderRequestResponse>> approveRequest(
+    public ResponseEntity<BaseResponse<ProviderRequestResponse>> approveRequest(
             @PathVariable Long requestId
     ) {
-        ProviderRequestResponse response = providerRequestService.approveRequest(requestId);
-        return ResponseEntity.ok(ApiResponse.success(response, "Provider request approved successfully"));
+        ProviderRequestResponse response =
+                providerRequestService.approveRequest(requestId);
+
+        return ResponseEntity.ok(
+                BaseResponse.success(response, "Provider request approved successfully")
+        );
     }
 }

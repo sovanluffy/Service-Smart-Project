@@ -1,4 +1,4 @@
-package com.rental_api.ServiceBooking.Config;
+package com.rental_api.ServiceBooking.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
