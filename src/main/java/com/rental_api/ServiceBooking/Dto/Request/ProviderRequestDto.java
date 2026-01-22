@@ -6,5 +6,5 @@ import lombok.Data;
 public class ProviderRequestDto {
     private Long userId;       // The user requesting
     private String bio;        // Short bio
-    private Integer experience; // Years of experience
+    private Double experience; // Use Double for fractional years
 }

@@ -6,7 +6,7 @@ import com.rental_api.ServiceBooking.Dto.Response.ProviderRequestResponse;
 import java.util.List;
 
 public interface ProviderRequestService {
-    ProviderRequestResponse createRequest(ProviderRequestDto dto);
+    ProviderRequestResponse createRequest(ProviderRequestDto dto, String email);
     List<ProviderRequestResponse> getAllRequests();
     ProviderRequestResponse approveRequest(Long requestId);
 }

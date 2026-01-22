@@ -1,14 +1,20 @@
 package com.rental_api.ServiceBooking.Dto.Response;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ProviderRequestResponse {
     private Long id;
-    private Long userId;
-    private String fullname;
-    private String email;
+
+    private UserInfoResponse user; // NESTED USER OBJECT
+
     private String bio;
-    private Integer experience;
-    private String status; // PENDING / APPROVED / REJECTED
+    private String experience;
+    private String status;
 }

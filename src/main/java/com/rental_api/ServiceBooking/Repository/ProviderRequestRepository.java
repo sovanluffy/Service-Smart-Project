@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface ProviderRequestRepository extends JpaRepository<ProviderRequest, Long> {
     List<ProviderRequest> findByUser(User user);
+    boolean existsByUserIdAndStatus(Long userId, String status);
 }

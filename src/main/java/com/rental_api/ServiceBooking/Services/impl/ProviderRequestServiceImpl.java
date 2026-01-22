@@ -2,9 +2,12 @@ package com.rental_api.ServiceBooking.Services.impl;
 
 import com.rental_api.ServiceBooking.Dto.Request.ProviderRequestDto;
 import com.rental_api.ServiceBooking.Dto.Response.ProviderRequestResponse;
+import com.rental_api.ServiceBooking.Dto.Response.UserInfoResponse;
 import com.rental_api.ServiceBooking.Entity.ProviderRequest;
 import com.rental_api.ServiceBooking.Entity.ServiceProvider;
 import com.rental_api.ServiceBooking.Entity.User;
+import com.rental_api.ServiceBooking.Exception.ConflictException;
+import com.rental_api.ServiceBooking.Exception.UserNotFoundException;
 import com.rental_api.ServiceBooking.Repository.ProviderRequestRepository;
 import com.rental_api.ServiceBooking.Repository.ServiceProviderRepository;
 import com.rental_api.ServiceBooking.Repository.UserRepository;
@@ -26,26 +29,30 @@ public class ProviderRequestServiceImpl implements ProviderRequestService {
 
     @Override
     @Transactional
-    public ProviderRequestResponse createRequest(ProviderRequestDto dto) {
-        User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public ProviderRequestResponse createRequest(ProviderRequestDto dto, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        ProviderRequest request = new ProviderRequest();
-        request.setUser(user);
-        request.setBio(dto.getBio());
-        request.setExperience(dto.getExperience());
-        request.setStatus("PENDING");
+        if (providerRequestRepository.existsByUserIdAndStatus(user.getId(), "PENDING")) {
+            throw new ConflictException("You already have a pending request.");
+        }
 
-        ProviderRequest saved = providerRequestRepository.save(request);
+        Double experience = dto.getExperience() != null ? dto.getExperience() : 0.0;
 
-        return mapToResponse(saved);
+        ProviderRequest request = ProviderRequest.builder()
+                .user(user)
+                .bio(dto.getBio())
+                .experience(experience)
+                .status("PENDING")
+                .build();
+
+        return mapToResponse(providerRequestRepository.save(request));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ProviderRequestResponse> getAllRequests() {
-        return providerRequestRepository.findAll()
-                .stream()
+        return providerRequestRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -56,29 +63,41 @@ public class ProviderRequestServiceImpl implements ProviderRequestService {
         ProviderRequest request = providerRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
+        if ("APPROVED".equals(request.getStatus())) {
+            throw new ConflictException("Request already approved.");
+        }
+
         request.setStatus("APPROVED");
         providerRequestRepository.save(request);
 
-        // Create ServiceProvider entry
         ServiceProvider provider = new ServiceProvider();
         provider.setUser(request.getUser());
         provider.setBio(request.getBio());
         provider.setExperience(request.getExperience());
         provider.setRating(0.0f);
+
         serviceProviderRepository.save(provider);
 
         return mapToResponse(request);
     }
 
     private ProviderRequestResponse mapToResponse(ProviderRequest request) {
-        ProviderRequestResponse response = new ProviderRequestResponse();
-        response.setId(request.getId());
-        response.setUserId(request.getUser().getId());
-        response.setFullname(request.getUser().getFullname());
-        response.setEmail(request.getUser().getEmail());
-        response.setBio(request.getBio());
-        response.setExperience(request.getExperience());
-        response.setStatus(request.getStatus());
-        return response;
+        User user = request.getUser();
+
+        UserInfoResponse userInfo = UserInfoResponse.builder()
+                .id(user.getId())
+                .fullname(user.getFullname())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .location(user.getLocation())
+                .build();
+
+        return ProviderRequestResponse.builder()
+                .id(request.getId())
+                .user(userInfo)
+                .bio(request.getBio())
+                .experience(request.getExperience() != null ? String.valueOf(request.getExperience()) : "0.0")
+                .status(request.getStatus())
+                .build();
     }
 }
