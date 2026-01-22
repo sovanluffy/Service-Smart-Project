@@ -21,8 +21,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        return users.stream()
+        return userRepository.findAll()
+                .stream()
                 .map(this::mapToUserResponse)
                 .collect(Collectors.toList());
     }
@@ -35,7 +35,30 @@ public class UserServiceImpl implements UserService {
         return mapToUserResponse(user);
     }
 
-    // Helper method to map User entity to DTO
+    @Override
+    @Transactional
+    public UserResponse updateUser(Long id, UserResponse updatedData) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new PropertyNotFoundException("User not found with id: " + id));
+
+        user.setFullname(updatedData.getFullname());
+        user.setEmail(updatedData.getEmail());
+        user.setPhone(updatedData.getPhone());
+        user.setAddress(updatedData.getAddress());
+        user.setLocation(updatedData.getLocation());
+
+        User savedUser = userRepository.save(user);
+        return mapToUserResponse(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new PropertyNotFoundException("User not found with id: " + id));
+        userRepository.delete(user);
+    }
+
     private UserResponse mapToUserResponse(User user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
@@ -44,6 +67,7 @@ public class UserServiceImpl implements UserService {
         response.setPhone(user.getPhone());
         response.setAddress(user.getAddress());
         response.setLocation(user.getLocation());
+        response.setRoles(user.getRoles() != null ? user.getRoles().stream().map(r -> r.getName()).collect(Collectors.toSet()) : null);
         return response;
     }
 }

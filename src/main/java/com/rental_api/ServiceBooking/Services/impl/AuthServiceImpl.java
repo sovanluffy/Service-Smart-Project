@@ -6,6 +6,7 @@ import com.rental_api.ServiceBooking.Dto.Response.AuthResponse;
 import com.rental_api.ServiceBooking.Entity.Role;
 import com.rental_api.ServiceBooking.Entity.User;
 import com.rental_api.ServiceBooking.Exception.ConflictException;
+import com.rental_api.ServiceBooking.Exception.InvalidInputException;
 import com.rental_api.ServiceBooking.Repository.RoleRepository;
 import com.rental_api.ServiceBooking.Repository.UserRepository;
 import com.rental_api.ServiceBooking.Services.AuthService;
@@ -31,37 +32,22 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
 
-    // -------------------------------
-    // Regex for email validation
-    // -------------------------------
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
     );
 
-    // -------------------------------
-    // Register CUSTOMER
-    // -------------------------------
+    // ------------------- REGISTER CUSTOMER -------------------
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        log.info("Processing registration for email: {}", request.getEmail());
+        log.info("Registering CUSTOMER: {}", request.getEmail());
 
-        String email = request.getEmail();
-
-        // Validate email format
-        if (!EMAIL_PATTERN.matcher(email).matches()) {
-            throw new BadCredentialsException(
-                    "Invalid email format. Please enter a valid email with '@' and domain (e.g., example@gmail.com)"
-            );
-        }
-
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new ConflictException("Email already exists");
-        }
+        validateEmail(request.getEmail());
+        checkEmailExists(request.getEmail());
 
         User user = User.builder()
                 .fullname(request.getFullname())
-                .email(email)
+                .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .address(request.getAddress())
@@ -70,47 +56,30 @@ public class AuthServiceImpl implements AuthService {
 
         Role customerRole = roleRepository.findByName("CUSTOMER")
                 .orElseGet(() -> {
-                    Role nr = new Role();
-                    nr.setName("CUSTOMER");
-                    nr.setDescription("Default role for customers");
-                    return roleRepository.save(nr);
+                    Role r = new Role();
+                    r.setName("CUSTOMER");
+                    r.setDescription("Default CUSTOMER role");
+                    return roleRepository.save(r);
                 });
 
         user.setRoles(Set.of(customerRole));
         user = userRepository.save(user);
 
-        List<String> roleNames = user.getRoles().stream().map(Role::getName).toList();
-        List<Long> roleIds = user.getRoles().stream().map(Role::getId).toList();
-
-        String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getEmail(), roleNames, roleIds);
-
-        return mapToAuthResponse(user, token, "Registered successfully");
+        return buildAuthResponse(user, "Registered successfully");
     }
 
-    // -------------------------------
-    // Register ADMIN
-    // -------------------------------
+    // ------------------- REGISTER ADMIN -------------------
     @Override
     @Transactional
     public AuthResponse registerAdmin(RegisterRequest request) {
-        log.info("Processing ADMIN registration for email: {}", request.getEmail());
+        log.info("Registering ADMIN: {}", request.getEmail());
 
-        String email = request.getEmail();
-
-        // Validate email format
-        if (!EMAIL_PATTERN.matcher(email).matches()) {
-            throw new BadCredentialsException(
-                    "Invalid email format. Please enter a valid email with '@' and domain (e.g., example@gmail.com)"
-            );
-        }
-
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new ConflictException("Email already exists");
-        }
+        validateEmail(request.getEmail());
+        checkEmailExists(request.getEmail());
 
         User user = User.builder()
                 .fullname(request.getFullname())
-                .email(email)
+                .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .address(request.getAddress())
@@ -119,67 +88,72 @@ public class AuthServiceImpl implements AuthService {
 
         Role adminRole = roleRepository.findByName("ADMIN")
                 .orElseGet(() -> {
-                    Role role = new Role();
-                    role.setName("ADMIN");
-                    role.setDescription("System Administrator");
-                    return roleRepository.save(role);
+                    Role r = new Role();
+                    r.setName("ADMIN");
+                    r.setDescription("System Administrator");
+                    return roleRepository.save(r);
                 });
 
         user.setRoles(Set.of(adminRole));
         user = userRepository.save(user);
 
-        List<String> roleNames = user.getRoles().stream().map(Role::getName).toList();
-        List<Long> roleIds = user.getRoles().stream().map(Role::getId).toList();
-
-        String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getEmail(), roleNames, roleIds);
-
-        return mapToAuthResponse(user, token, "Admin registered successfully");
+        return buildAuthResponse(user, "Admin registered successfully");
     }
 
-    // -------------------------------
-    // Login
-    // -------------------------------
+    // ------------------- LOGIN -------------------
     @Override
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        log.info("Processing login for email: {}", request.getEmail());
+        log.info("Login attempt: {}", request.getEmail());
 
-        String email = request.getEmail();
+        validateEmail(request.getEmail());
 
-        // Validate email format
-        if (!EMAIL_PATTERN.matcher(email).matches()) {
-            throw new BadCredentialsException(
-                    "Invalid email format. Please enter a valid email with '@' and domain (e.g., example@gmail.com)"
-            );
-        }
-
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BadCredentialsException("Invalid email or password");
         }
 
+        return buildAuthResponse(user, "Login successful");
+    }
+
+    // ------------------- LOGOUT -------------------
+    @Override
+    @Transactional
+    public void logout(String token) {
+        log.info("Logging out token: {}", token);
+        // Stateless JWT: frontend just deletes token
+        // Optional: store in blacklist for server invalidation
+    }
+
+    // ------------------- PRIVATE HELPERS -------------------
+    private void validateEmail(String email) {
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            throw new InvalidInputException("Invalid email format");
+        }
+    }
+
+    private void checkEmailExists(String email) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new ConflictException("Email already exists");
+        }
+    }
+
+    private AuthResponse buildAuthResponse(User user, String message) {
         List<String> roleNames = user.getRoles().stream().map(Role::getName).toList();
         List<Long> roleIds = user.getRoles().stream().map(Role::getId).toList();
 
         String token = jwtUtils.generateToken(user.getId(), user.getEmail(), user.getEmail(), roleNames, roleIds);
 
-        return mapToAuthResponse(user, token, "Login successful");
-    }
-
-    // -------------------------------
-    // Map User entity to AuthResponse DTO
-    // -------------------------------
-    private AuthResponse mapToAuthResponse(User user, String token, String message) {
         return AuthResponse.builder()
                 .userId(user.getId())
                 .fullname(user.getFullname())
                 .email(user.getEmail())
                 .message(message)
                 .token(token)
-                .roles(user.getRoles().stream().map(Role::getName).toList())
-                .roleIds(user.getRoles().stream().map(Role::getId).toList())
+                .roles(roleNames)
+                .roleIds(roleIds)
                 .build();
     }
 }

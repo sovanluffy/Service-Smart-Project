@@ -30,12 +30,10 @@ public class JwtUtils {
             log.warn("JWT secret missing or too short! Using fallback secret for dev.");
             secret = "FallbackSecretKeyWith64PlusCharactersLongForDevOnly!1234567890ABCDEFGHIJ";
         }
-
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
         this.expiration = expiration;
     }
 
-    // Full token generator
     public String generateToken(Long userId, String email, String username, List<String> roles, List<Long> roleIds) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
@@ -50,12 +48,6 @@ public class JwtUtils {
                 .compact();
     }
 
-    // Overload if you don’t have roleIds
-    public String generateToken(Long userId, String email, String username, List<String> roles) {
-        return generateToken(userId, email, username, roles, List.of());
-    }
-
-    // Parse claims
     public Claims getClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -64,7 +56,6 @@ public class JwtUtils {
                 .getBody();
     }
 
-    // Validate token
     public boolean validateToken(String token) {
         try {
             return getClaims(token).getExpiration().after(new Date());
@@ -74,5 +65,10 @@ public class JwtUtils {
             log.warn("Invalid JWT: {}", e.getMessage());
         }
         return false;
+    }
+
+    // ✅ extract userId from token
+    public Long extractUserId(String token) {
+        return getClaims(token).get(CLAIM_USER_ID, Long.class);
     }
 }

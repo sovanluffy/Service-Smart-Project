@@ -31,12 +31,11 @@ public class ProviderRequestServiceImpl implements ProviderRequestService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
 
-    // CREATE REQUEST
     @Override
     @Transactional
-    public ProviderRequestResponse createRequest(ProviderRequestDto dto, String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+    public ProviderRequestResponse createRequest(ProviderRequestDto dto, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
         if (providerRequestRepository.existsByUserIdAndStatus(user.getId(), "PENDING")) {
             throw new ConflictException("You already have a pending provider request.");
@@ -51,19 +50,25 @@ public class ProviderRequestServiceImpl implements ProviderRequestService {
                 .status("PENDING")
                 .build();
 
-        return mapToResponse(providerRequestRepository.save(request));
+        ProviderRequest saved = providerRequestRepository.save(request);
+
+        ProviderRequestResponse response = mapToResponse(saved);
+        response.setMessage("Provider request created successfully"); // ✅ message
+        return response;
     }
 
-    // GET ALL REQUESTS
     @Override
     @Transactional(readOnly = true)
     public List<ProviderRequestResponse> getAllRequests() {
         return providerRequestRepository.findAll().stream()
-                .map(this::mapToResponse)
+                .map(req -> {
+                    ProviderRequestResponse resp = mapToResponse(req);
+                    resp.setMessage("Request fetched successfully");
+                    return resp;
+                })
                 .collect(Collectors.toList());
     }
 
-    // APPROVE REQUEST
     @Override
     @Transactional
     public ProviderRequestResponse approveRequest(Long requestId) {
@@ -74,16 +79,13 @@ public class ProviderRequestServiceImpl implements ProviderRequestService {
         if ("APPROVED".equals(request.getStatus())) {
             throw new ConflictException("Request already approved.");
         }
-
         if ("REJECTED".equals(request.getStatus())) {
             throw new ConflictException("Cannot approve a rejected request.");
         }
 
-        // Approve request
         request.setStatus("APPROVED");
         providerRequestRepository.save(request);
 
-        // Create ServiceProvider
         ServiceProvider provider = ServiceProvider.builder()
                 .user(request.getUser())
                 .bio(request.getBio())
@@ -92,20 +94,20 @@ public class ProviderRequestServiceImpl implements ProviderRequestService {
                 .build();
         serviceProviderRepository.save(provider);
 
-        // Assign ROLE_PROVIDER
-        User user = request.getUser();
         Role providerRole = roleRepository.findByName("PROVIDER")
                 .orElseThrow(() -> new RuntimeException("ROLE_PROVIDER not found"));
 
+        User user = request.getUser();
         if (!user.getRoles().contains(providerRole)) {
             user.getRoles().add(providerRole);
             userRepository.save(user);
         }
 
-        return mapToResponse(request);
+        ProviderRequestResponse response = mapToResponse(request);
+        response.setMessage("Provider request approved successfully");
+        return response;
     }
 
-    // REJECT REQUEST
     @Override
     @Transactional
     public ProviderRequestResponse rejectRequest(Long requestId) {
@@ -116,19 +118,18 @@ public class ProviderRequestServiceImpl implements ProviderRequestService {
         if ("REJECTED".equals(request.getStatus())) {
             throw new ConflictException("Request already rejected.");
         }
-
         if ("APPROVED".equals(request.getStatus())) {
             throw new ConflictException("Cannot reject an approved request.");
         }
 
-        // Reject request
         request.setStatus("REJECTED");
         providerRequestRepository.save(request);
 
-        return mapToResponse(request);
+        ProviderRequestResponse response = mapToResponse(request);
+        response.setMessage("Provider request rejected successfully");
+        return response;
     }
 
-    // MAP ENTITY TO RESPONSE
     private ProviderRequestResponse mapToResponse(ProviderRequest request) {
         User user = request.getUser();
 
