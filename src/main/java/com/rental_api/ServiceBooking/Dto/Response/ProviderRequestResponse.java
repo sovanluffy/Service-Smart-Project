@@ -17,4 +17,6 @@ public class ProviderRequestResponse {
     private String bio;
     private String experience;
     private String status;
+        private String message;
+
 }

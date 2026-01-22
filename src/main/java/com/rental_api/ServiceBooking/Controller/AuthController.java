@@ -7,7 +7,6 @@ import com.rental_api.ServiceBooking.Dto.Response.AuthResponse;
 import com.rental_api.ServiceBooking.Services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,28 +19,22 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // -------------------------------
-    // Register CUSTOMER
-    // -------------------------------
     @PostMapping("/register")
-    @Operation(summary = "Register new user", description = "Creates a new user and returns JWT token")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
+    @Operation(summary = "Register a customer", description = "Registers a new customer account")
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request) {
         AuthResponse authResponse = authService.register(request);
 
         ApiResponse<AuthResponse> response = new ApiResponse<>();
         response.setStatus(200);
-        response.setMessage("Registered successfully");
+        response.setMessage("Customer registered successfully");
         response.setData(authResponse);
 
         return ResponseEntity.ok(response);
     }
 
-    // -------------------------------
-    // Register ADMIN
-    // -------------------------------
     @PostMapping("/register-admin")
-    @Operation(summary = "Register new admin", description = "Creates a new ADMIN user and returns JWT token")
-    public ResponseEntity<ApiResponse<AuthResponse>> registerAdmin(@Valid @RequestBody RegisterRequest request) {
+    @Operation(summary = "Register an admin", description = "Registers a new admin account")
+    public ResponseEntity<ApiResponse<AuthResponse>> registerAdmin(@RequestBody RegisterRequest request) {
         AuthResponse authResponse = authService.registerAdmin(request);
 
         ApiResponse<AuthResponse> response = new ApiResponse<>();
@@ -52,12 +45,9 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // -------------------------------
-    // Login
-    // -------------------------------
     @PostMapping("/login")
-    @Operation(summary = "Login user", description = "Authenticates user and returns JWT token")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+    @Operation(summary = "Login", description = "Authenticate user and return JWT")
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest request) {
         AuthResponse authResponse = authService.login(request);
 
         ApiResponse<AuthResponse> response = new ApiResponse<>();
@@ -68,16 +58,15 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // -------------------------------
-    // Test Endpoint
-    // -------------------------------
-    @GetMapping("/hello")
-    @Operation(summary = "Test endpoint", description = "Simple test endpoint to verify API is running")
-    public ResponseEntity<ApiResponse<String>> hello() {
-        ApiResponse<String> response = new ApiResponse<>();
+    @PostMapping("/logout")
+    @Operation(summary = "Logout", description = "Logs out the current user")
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        authService.logout(token);
+
+        ApiResponse<Void> response = new ApiResponse<>();
         response.setStatus(200);
-        response.setMessage("Hello endpoint works!");
-        response.setData("Hello World");
+        response.setMessage("Logged out successfully");
 
         return ResponseEntity.ok(response);
     }

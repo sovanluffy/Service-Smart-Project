@@ -1,73 +1,51 @@
 package com.rental_api.ServiceBooking.Controller;
 
 import com.rental_api.ServiceBooking.Dto.Request.ProviderRequestDto;
-import com.rental_api.ServiceBooking.Dto.Response.BaseResponse;
 import com.rental_api.ServiceBooking.Dto.Response.ProviderRequestResponse;
 import com.rental_api.ServiceBooking.Services.ProviderRequestService;
-
+import com.rental_api.ServiceBooking.Security.JwtUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/provider-requests")
+@RequestMapping("/provider-requests")
 @RequiredArgsConstructor
 public class ProviderRequestController {
 
     private final ProviderRequestService providerRequestService;
+    private final JwtUtils jwtUtils;
 
-    // CREATE PROVIDER REQUEST
-    @PostMapping
-    public ResponseEntity<BaseResponse<ProviderRequestResponse>> createRequest(
-            @RequestBody ProviderRequestDto dto,
-            Authentication authentication
-    ) {
-        String email = authentication.getName();
-        ProviderRequestResponse response =
-                providerRequestService.createRequest(dto, email);
-
-        return ResponseEntity.ok(
-                BaseResponse.success(response, "Provider request created successfully")
-        );
+    @PostMapping("/request")
+    public ProviderRequestResponse createRequest(@RequestBody ProviderRequestDto dto,
+                                                 HttpServletRequest request) {
+        String token = extractToken(request);
+        Long userId = jwtUtils.extractUserId(token);
+        return providerRequestService.createRequest(dto, userId);
     }
 
-    // GET ALL PROVIDER REQUESTS (ADMIN ONLY)
-    @GetMapping
-    public ResponseEntity<BaseResponse<List<ProviderRequestResponse>>> getAllRequests() {
-        List<ProviderRequestResponse> requests =
-                providerRequestService.getAllRequests();
-
-        return ResponseEntity.ok(
-                BaseResponse.success(requests, "All provider requests retrieved successfully")
-        );
+    @GetMapping("/all")
+    public List<ProviderRequestResponse> getAllRequests() {
+        return providerRequestService.getAllRequests();
     }
 
-    // APPROVE REQUEST (ADMIN ONLY)
-    @PostMapping("/approve/{requestId}")
-    public ResponseEntity<BaseResponse<ProviderRequestResponse>> approveRequest(
-            @PathVariable Long requestId
-    ) {
-        ProviderRequestResponse response =
-                providerRequestService.approveRequest(requestId);
-
-        return ResponseEntity.ok(
-                BaseResponse.success(response, "Congratulations! You are now a provider")
-        );
+    @PutMapping("/{id}/approve")
+    public ProviderRequestResponse approveRequest(@PathVariable Long id) {
+        return providerRequestService.approveRequest(id);
     }
 
-    // REJECT REQUEST (ADMIN ONLY)
-    @PostMapping("/reject/{requestId}")
-    public ResponseEntity<BaseResponse<ProviderRequestResponse>> rejectRequest(
-            @PathVariable Long requestId
-    ) {
-        ProviderRequestResponse response =
-                providerRequestService.rejectRequest(requestId);
+    @PutMapping("/{id}/reject")
+    public ProviderRequestResponse rejectRequest(@PathVariable Long id) {
+        return providerRequestService.rejectRequest(id);
+    }
 
-        return ResponseEntity.ok(
-                BaseResponse.success(response, "You can't be a provider now")
-        );
+    private String extractToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Missing or invalid Authorization header");
+        }
+        return authHeader.substring(7);
     }
 }

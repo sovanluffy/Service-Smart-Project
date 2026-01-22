@@ -21,7 +21,7 @@ public class UserController {
 
     // GET all users
     @GetMapping
-    @Operation(summary = "Get all users", description = "Returns a list of all users")
+    @Operation(summary = "Get all users", description = "Returns all users")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
 
@@ -43,6 +43,35 @@ public class UserController {
         response.setStatus(200);
         response.setMessage("User fetched successfully");
         response.setData(user);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // UPDATE user
+    @PutMapping("/{id}")
+    @Operation(summary = "Update a user", description = "Updates user details by ID")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable Long id,
+            @RequestBody UserResponse updatedData) {
+        UserResponse updatedUser = userService.updateUser(id, updatedData);
+
+        ApiResponse<UserResponse> response = new ApiResponse<>();
+        response.setStatus(200);
+        response.setMessage("User updated successfully");
+        response.setData(updatedUser);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // DELETE user
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a user", description = "Deletes a user by ID")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+
+        ApiResponse<Void> response = new ApiResponse<>();
+        response.setStatus(200);
+        response.setMessage("User deleted successfully");
 
         return ResponseEntity.ok(response);
     }
