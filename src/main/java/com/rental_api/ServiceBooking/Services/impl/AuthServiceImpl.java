@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -31,6 +32,13 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtils jwtUtils;
 
     // -------------------------------
+    // Regex for email validation
+    // -------------------------------
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+            "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+    );
+
+    // -------------------------------
     // Register CUSTOMER
     // -------------------------------
     @Override
@@ -38,13 +46,22 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse register(RegisterRequest request) {
         log.info("Processing registration for email: {}", request.getEmail());
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        String email = request.getEmail();
+
+        // Validate email format
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            throw new BadCredentialsException(
+                    "Invalid email format. Please enter a valid email with '@' and domain (e.g., example@gmail.com)"
+            );
+        }
+
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new ConflictException("Email already exists");
         }
 
         User user = User.builder()
                 .fullname(request.getFullname())
-                .email(request.getEmail())
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .address(request.getAddress())
@@ -78,13 +95,22 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse registerAdmin(RegisterRequest request) {
         log.info("Processing ADMIN registration for email: {}", request.getEmail());
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        String email = request.getEmail();
+
+        // Validate email format
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            throw new BadCredentialsException(
+                    "Invalid email format. Please enter a valid email with '@' and domain (e.g., example@gmail.com)"
+            );
+        }
+
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new ConflictException("Email already exists");
         }
 
         User user = User.builder()
                 .fullname(request.getFullname())
-                .email(request.getEmail())
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .address(request.getAddress())
@@ -118,7 +144,16 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         log.info("Processing login for email: {}", request.getEmail());
 
-        User user = userRepository.findByEmail(request.getEmail())
+        String email = request.getEmail();
+
+        // Validate email format
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            throw new BadCredentialsException(
+                    "Invalid email format. Please enter a valid email with '@' and domain (e.g., example@gmail.com)"
+            );
+        }
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {

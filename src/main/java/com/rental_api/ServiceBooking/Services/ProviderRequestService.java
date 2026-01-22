@@ -9,4 +9,6 @@ public interface ProviderRequestService {
     ProviderRequestResponse createRequest(ProviderRequestDto dto, String email);
     List<ProviderRequestResponse> getAllRequests();
     ProviderRequestResponse approveRequest(Long requestId);
+     // Add this line:
+    ProviderRequestResponse rejectRequest(Long requestId);
 }

@@ -5,15 +5,7 @@ import com.rental_api.ServiceBooking.Dto.Response.BaseResponse;
 import com.rental_api.ServiceBooking.Dto.Response.ProviderRequestResponse;
 import com.rental_api.ServiceBooking.Services.ProviderRequestService;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-// import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -27,28 +19,7 @@ public class ProviderRequestController {
 
     private final ProviderRequestService providerRequestService;
 
-    @Operation(
-            summary = "Create a new provider request",
-            description = "Creates a provider request for the logged-in user",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Provider request created successfully",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = BaseResponse.class)
-                            )
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "User not found"
-                    ),
-                    @ApiResponse(
-                            responseCode = "409",
-                            description = "Conflict: pending request exists"
-                    )
-            }
-    )
+    // CREATE PROVIDER REQUEST
     @PostMapping
     public ResponseEntity<BaseResponse<ProviderRequestResponse>> createRequest(
             @RequestBody ProviderRequestDto dto,
@@ -63,20 +34,7 @@ public class ProviderRequestController {
         );
     }
 
-    @Operation(
-            summary = "Get all provider requests",
-            description = "Retrieve all provider requests (Admin only)",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "List retrieved successfully",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = BaseResponse.class)
-                            )
-                    )
-            }
-    )
+    // GET ALL PROVIDER REQUESTS (ADMIN ONLY)
     @GetMapping
     public ResponseEntity<BaseResponse<List<ProviderRequestResponse>>> getAllRequests() {
         List<ProviderRequestResponse> requests =
@@ -87,28 +45,7 @@ public class ProviderRequestController {
         );
     }
 
-    @Operation(
-            summary = "Approve a provider request",
-            description = "Approve a provider request by its ID (Admin only)",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Provider request approved successfully",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = BaseResponse.class)
-                            )
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Request not found"
-                    ),
-                    @ApiResponse(
-                            responseCode = "409",
-                            description = "Conflict: request already approved"
-                    )
-            }
-    )
+    // APPROVE REQUEST (ADMIN ONLY)
     @PostMapping("/approve/{requestId}")
     public ResponseEntity<BaseResponse<ProviderRequestResponse>> approveRequest(
             @PathVariable Long requestId
@@ -117,7 +54,20 @@ public class ProviderRequestController {
                 providerRequestService.approveRequest(requestId);
 
         return ResponseEntity.ok(
-                BaseResponse.success(response, "Provider request approved successfully")
+                BaseResponse.success(response, "Congratulations! You are now a provider")
+        );
+    }
+
+    // REJECT REQUEST (ADMIN ONLY)
+    @PostMapping("/reject/{requestId}")
+    public ResponseEntity<BaseResponse<ProviderRequestResponse>> rejectRequest(
+            @PathVariable Long requestId
+    ) {
+        ProviderRequestResponse response =
+                providerRequestService.rejectRequest(requestId);
+
+        return ResponseEntity.ok(
+                BaseResponse.success(response, "You can't be a provider now")
         );
     }
 }
