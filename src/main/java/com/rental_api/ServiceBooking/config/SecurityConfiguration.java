@@ -16,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -60,7 +61,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PUT, "/provider-requests/*/status").hasRole("ADMIN")
 
                         // 4️⃣ Catch-all
-                        .anyRequest().authenticated()
+                        
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

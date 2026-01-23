@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 
 
 
@@ -21,13 +23,37 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    @PostMapping
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/create")
     public ResponseEntity<CategoryResponse> create(@RequestBody CategoryRequest request) {
         return ResponseEntity.ok(categoryService.create(request));
     }
 
-    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/get-all")
     public ResponseEntity<List<CategoryResponse>> getAll() {
         return ResponseEntity.ok(categoryService.getAll());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/getById/{id}")
+    public CategoryResponse getById(@PathVariable Long id) {
+        return categoryService.getById(id);
+    }
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/update/{id}")
+    public CategoryResponse update(
+            @PathVariable Long id,
+            @RequestBody CategoryRequest request
+    ) {
+        return categoryService.update(id, request);
+    }
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/delete/{id}")
+    public void delete(@PathVariable Long id) {
+        categoryService.delete(id);
     }
 }

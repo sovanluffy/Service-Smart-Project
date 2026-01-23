@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import com.rental_api.ServiceBooking.Exception.CategoryNotFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -79,4 +80,17 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(404, "Not Found",
                         "Endpoint not found. Please check the URL or method."));
     }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleCategoryNotFound(CategoryNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error(
+                    404,
+                    "Not Found",
+                    ex.getMessage()
+            ));
+    } 
+
+
+
 }

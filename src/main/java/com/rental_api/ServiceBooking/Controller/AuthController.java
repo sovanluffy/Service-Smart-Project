@@ -32,18 +32,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/register-admin")
-    @Operation(summary = "Register an admin", description = "Registers a new admin account")
-    public ResponseEntity<ApiResponse<AuthResponse>> registerAdmin(@RequestBody RegisterRequest request) {
-        AuthResponse authResponse = authService.registerAdmin(request);
-
-        ApiResponse<AuthResponse> response = new ApiResponse<>();
-        response.setStatus(200);
-        response.setMessage("Admin registered successfully");
-        response.setData(authResponse);
-
-        return ResponseEntity.ok(response);
-    }
+    
 
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Authenticate user and return JWT")
