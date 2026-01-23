@@ -1,4 +1,4 @@
-package com.rental_api.ServiceBooking.Security;
+package com.rental_api.ServiceBooking.config;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

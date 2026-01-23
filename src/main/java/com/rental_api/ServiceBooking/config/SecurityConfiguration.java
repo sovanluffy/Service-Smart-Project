@@ -1,7 +1,7 @@
 package com.rental_api.ServiceBooking.config;
 
-import com.rental_api.ServiceBooking.Security.JwtAccessDeniedHandler;
-import com.rental_api.ServiceBooking.Security.JwtAuthenticationEntryPoint;
+import com.rental_api.ServiceBooking.config.JwtAccessDeniedHandler;
+import com.rental_api.ServiceBooking.config.JwtAuthenticationEntryPoint;
 import com.rental_api.ServiceBooking.Security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

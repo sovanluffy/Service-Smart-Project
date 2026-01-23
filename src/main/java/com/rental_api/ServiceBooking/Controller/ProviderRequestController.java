@@ -22,8 +22,8 @@ public class ProviderRequestController {
     public ProviderRequestResponse createRequest(@RequestBody ProviderRequestDto dto,
                                                  HttpServletRequest request) {
         String token = extractToken(request);
-        Long userId = jwtUtils.extractUserId(token);
-        return providerRequestService.createRequest(dto, userId);
+        String email = jwtUtils.extractEmail(token); // ✅ FIXED
+        return providerRequestService.createRequest(dto, email);
     }
 
     @GetMapping("/all")

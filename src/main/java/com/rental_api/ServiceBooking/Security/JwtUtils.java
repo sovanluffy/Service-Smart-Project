@@ -34,7 +34,13 @@ public class JwtUtils {
         this.expiration = expiration;
     }
 
-    public String generateToken(Long userId, String email, String username, List<String> roles, List<Long> roleIds) {
+    public String generateToken(
+            Long userId,
+            String email,
+            String username,
+            List<String> roles,
+            List<Long> roleIds
+    ) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
                 .setSubject(username)
@@ -67,8 +73,13 @@ public class JwtUtils {
         return false;
     }
 
-    // ✅ extract userId from token
+    // ✅ extract userId
     public Long extractUserId(String token) {
         return getClaims(token).get(CLAIM_USER_ID, Long.class);
+    }
+
+    // ✅ extract email (FIX)
+    public String extractEmail(String token) {
+        return getClaims(token).get(CLAIM_EMAIL, String.class);
     }
 }
