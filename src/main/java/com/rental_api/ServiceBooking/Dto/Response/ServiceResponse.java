@@ -1,19 +1,19 @@
 package com.rental_api.ServiceBooking.Dto.Response;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
+@Builder
 public class ServiceResponse {
     private Long id;
     private String name;
     private String description;
-    private BigDecimal price;
-    private Integer duration; // in minutes
+    private Double price;
+    private Integer duration;
+    private String providerName; // from User.fullName
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

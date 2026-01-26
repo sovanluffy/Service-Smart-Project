@@ -1,6 +1,7 @@
 package com.rental_api.ServiceBooking.Services.impl;
 
 import com.rental_api.ServiceBooking.Dto.Request.ServiceRequest;
+import com.rental_api.ServiceBooking.Dto.Response.ServiceResponse;
 import com.rental_api.ServiceBooking.Entity.ServiceEntity;
 import com.rental_api.ServiceBooking.Entity.ServiceProvider;
 import com.rental_api.ServiceBooking.Repository.ServiceRepository;
@@ -23,12 +24,12 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ServiceEntity createService(Long userId, ServiceRequest request) {
-        // Step 1: Find the provider profile
+    public ServiceResponse createService(Long userId, ServiceRequest request) {
+        // 1️⃣ Find provider by userId
         ServiceProvider provider = providerRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Provider profile not found"));
 
-        // Step 2: Create new service
+        // 2️⃣ Create new service entity
         ServiceEntity service = new ServiceEntity();
         service.setProvider(provider);
         service.setName(request.getName());
@@ -38,7 +39,19 @@ public class ServiceServiceImpl implements ServiceService {
         service.setCreatedAt(LocalDateTime.now());
         service.setUpdatedAt(LocalDateTime.now());
 
-        // Step 3: Save and return
-        return serviceRepository.save(service);
+        // 3️⃣ Save to DB
+        ServiceEntity savedService = serviceRepository.save(service);
+
+        // 4️⃣ Map to DTO
+        return ServiceResponse.builder()
+                .id(savedService.getId())
+                .name(savedService.getName())
+                .description(savedService.getDescription())
+                .price(savedService.getPrice())
+                .duration(savedService.getDuration())
+                .providerName(provider.getUser().getFullname()) // ✅ use getFullname()
+                .createdAt(savedService.getCreatedAt())
+                .updatedAt(savedService.getUpdatedAt())
+                .build();
     }
 }
