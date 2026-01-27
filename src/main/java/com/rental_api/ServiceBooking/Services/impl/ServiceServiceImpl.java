@@ -4,54 +4,90 @@ import com.rental_api.ServiceBooking.Dto.Request.ServiceRequest;
 import com.rental_api.ServiceBooking.Dto.Response.ServiceResponse;
 import com.rental_api.ServiceBooking.Entity.ServiceEntity;
 import com.rental_api.ServiceBooking.Entity.ServiceProvider;
-import com.rental_api.ServiceBooking.Repository.ServiceRepository;
 import com.rental_api.ServiceBooking.Repository.ServiceProviderRepository;
+import com.rental_api.ServiceBooking.Repository.ServiceRepository;
 import com.rental_api.ServiceBooking.Services.ServiceService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ServiceServiceImpl implements ServiceService {
 
     private final ServiceRepository serviceRepository;
     private final ServiceProviderRepository providerRepository;
 
-    public ServiceServiceImpl(ServiceRepository serviceRepository,
-                              ServiceProviderRepository providerRepository) {
-        this.serviceRepository = serviceRepository;
-        this.providerRepository = providerRepository;
+    // CREATE
+    @Override
+    public ServiceResponse createService(ServiceRequest request) {
+
+        // TEMP FIX (until Spring Security)
+        ServiceProvider provider = providerRepository.findById(1L)
+                .orElseThrow(() -> new RuntimeException("Provider not found"));
+
+        ServiceEntity service = ServiceEntity.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .price(request.getPrice())
+                .duration(request.getDuration())
+                .provider(provider) // 🔥 REQUIRED
+                .build();
+
+        serviceRepository.save(service);
+        return mapToResponse(service);
     }
 
+    // READ ALL
     @Override
-    public ServiceResponse createService(Long userId, ServiceRequest request) {
-        // 1️⃣ Find provider by userId
-        ServiceProvider provider = providerRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Provider profile not found"));
+    public List<ServiceResponse> getAllServices() {
+        return serviceRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 
-        // 2️⃣ Create new service entity
-        ServiceEntity service = new ServiceEntity();
-        service.setProvider(provider);
+    // READ BY ID
+    @Override
+    public ServiceResponse getServiceById(Long id) {
+        ServiceEntity service = serviceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Service not found"));
+        return mapToResponse(service);
+    }
+
+    // UPDATE
+    @Override
+    public ServiceResponse updateService(Long id, ServiceRequest request) {
+        ServiceEntity service = serviceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Service not found"));
+
         service.setName(request.getName());
         service.setDescription(request.getDescription());
         service.setPrice(request.getPrice());
         service.setDuration(request.getDuration());
-        service.setCreatedAt(LocalDateTime.now());
-        service.setUpdatedAt(LocalDateTime.now());
 
-        // 3️⃣ Save to DB
-        ServiceEntity savedService = serviceRepository.save(service);
+        serviceRepository.save(service);
+        return mapToResponse(service);
+    }
 
-        // 4️⃣ Map to DTO
+    // DELETE
+    @Override
+    public void deleteService(Long id) {
+        ServiceEntity service = serviceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Service not found"));
+        serviceRepository.delete(service);
+    }
+
+    // DTO Mapper
+    private ServiceResponse mapToResponse(ServiceEntity service) {
         return ServiceResponse.builder()
-                .id(savedService.getId())
-                .name(savedService.getName())
-                .description(savedService.getDescription())
-                .price(savedService.getPrice())
-                .duration(savedService.getDuration())
-                .providerName(provider.getUser().getFullname()) // ✅ use getFullname()
-                .createdAt(savedService.getCreatedAt())
-                .updatedAt(savedService.getUpdatedAt())
+                .id(service.getId())
+                .name(service.getName())
+                .description(service.getDescription())
+                .price(service.getPrice())
+                .duration(service.getDuration())
                 .build();
     }
 }
