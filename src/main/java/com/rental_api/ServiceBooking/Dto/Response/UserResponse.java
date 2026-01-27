@@ -13,4 +13,8 @@ public class UserResponse {
     private String address;
     private String location;
     private Set<String> roles;
+
+    public UserResponse orElseThrow(Object userNotFound) {
+        return null;
+    }
 }

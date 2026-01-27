@@ -36,6 +36,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserResponse getUserByEmail(String email) {
+        return null;
+    }
+
+    @Override
     @Transactional
     public UserResponse updateUser(Long id, UserResponse updatedData) {
         User user = userRepository.findById(id)
@@ -57,6 +62,11 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new PropertyNotFoundException("User not found with id: " + id));
         userRepository.delete(user);
+    }
+
+    @Override
+    public UserResponse getUserEntityByEmail(String email) {
+        return null;
     }
 
     private UserResponse mapToUserResponse(User user) {

@@ -49,6 +49,11 @@ public class SecurityConfiguration {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
+                        //Category endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
 
                         // 2️⃣ Authenticated endpoints
                         .requestMatchers("/users/**").hasRole("ADMIN")
@@ -60,7 +65,13 @@ public class SecurityConfiguration {
                         // ✅ Fix: Changed ** to * to satisfy modern PathPatternParser
                         .requestMatchers(HttpMethod.PUT, "/provider-requests/*/status").hasRole("ADMIN")
 
-                        // 4️⃣ Catch-all
+                         // 3️⃣ Booking endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/bookings").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/my").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.PUT, "/api/bookings/*/accept").hasRole("PROVIDER")
+                        .requestMatchers(HttpMethod.PUT, "/api/bookings/*/reject").hasRole("PROVIDER")
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/all").hasRole("ADMIN")
+                      
                         
                 )
                 .sessionManagement(session ->
@@ -72,6 +83,7 @@ public class SecurityConfiguration {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 );
+
 
         return http.build();
     }

@@ -93,4 +93,19 @@ public class GlobalExceptionHandler {
 
 
 
+     @ExceptionHandler(ServiceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleServiceNotFound(ServiceNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error(
+                    404,
+                    "Not Found",
+                    ex.getMessage()
+            ));
+    } 
+
+
+    
+
+
+
 }
