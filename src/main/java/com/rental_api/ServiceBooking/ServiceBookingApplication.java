@@ -12,6 +12,8 @@ public class ServiceBookingApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(ServiceBookingApplication.class, args);
+
         logger.info("ServiceBookingApplication started successfully!");
+        logger.info("🎉 Swagger UI is ready! Open it in your browser: http://localhost:8080/swagger-ui/index.html");
     }
 }
