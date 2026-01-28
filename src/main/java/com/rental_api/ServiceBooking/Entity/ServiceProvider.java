@@ -3,6 +3,8 @@ package com.rental_api.ServiceBooking.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "service_providers")
 @Data
@@ -20,8 +22,9 @@ public class ServiceProvider {
     private User user;
 
     private String bio;
-
-    private Double experience; // Changed from Integer to Double
-
+    private Double experience;
     private Float rating;
+
+    @OneToMany(mappedBy = "provider")
+    private List<ServiceEntity> services;
 }
