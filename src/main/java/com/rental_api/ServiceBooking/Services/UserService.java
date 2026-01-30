@@ -1,10 +1,15 @@
 package com.rental_api.ServiceBooking.Services;
 
 import com.rental_api.ServiceBooking.Dto.Response.UserResponse;
+import com.rental_api.ServiceBooking.Entity.User;
 
 import java.util.List;
 
 public interface UserService {
+
+    static User getCurrentUser() {
+        return null;
+    }
 
     // Get all users
     List<UserResponse> getAllUsers();

@@ -1,7 +1,5 @@
 package com.rental_api.ServiceBooking.config;
 
-import com.rental_api.ServiceBooking.config.JwtAccessDeniedHandler;
-import com.rental_api.ServiceBooking.config.JwtAuthenticationEntryPoint;
 import com.rental_api.ServiceBooking.Security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -34,18 +32,18 @@ public class SecurityConfiguration {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
 
-                        // 0️⃣ Allow OPTIONS for CORS (important for browser/swagger requests)
+                        // 0️⃣ Allow OPTIONS for CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 1️⃣ Public endpoints (Registration, Login, and Documentation)
+                        // 1️⃣ Public endpoints
                         .requestMatchers(
-                                "/auth/**",                          // ✅ Allows /auth/register and /auth/authenticate
-                                "/api/v1/auth-service/**",           // ✅ Allows the versioned paths
+                                "/auth/**",
+                                "/api/v1/auth-service/**",
                                 "/instances",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
-                                "/api-docs/**",                      // ✅ Fixes Swagger config 401
+                                "/api-docs/**",
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
@@ -61,18 +59,22 @@ public class SecurityConfiguration {
 
                         // 3️⃣ Role-based endpoints
                         .requestMatchers(HttpMethod.GET, "/provider-requests/all").hasRole("ADMIN")
-                        
-                        // ✅ Fix: Changed ** to * to satisfy modern PathPatternParser
                         .requestMatchers(HttpMethod.PUT, "/provider-requests/*/status").hasRole("ADMIN")
 
                          // 3️⃣ Booking endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/bookings").hasRole("CUSTOMER")
-                        .requestMatchers(HttpMethod.GET, "/api/bookings/my").hasRole("CUSTOMER")
-                        .requestMatchers(HttpMethod.PUT, "/api/bookings/*/accept").hasRole("PROVIDER")
-                        .requestMatchers(HttpMethod.PUT, "/api/bookings/*/reject").hasRole("PROVIDER")
-                        .requestMatchers(HttpMethod.GET, "/api/bookings/all").hasRole("ADMIN")
-                      
-                        
+                        // Booking endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/services/*/bookings").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/api/services/bookings/my").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.PUT, "/api/services/bookings/*/accept").hasRole("PROVIDER")
+                        .requestMatchers(HttpMethod.PUT, "/api/services/bookings/*/reject").hasRole("PROVIDER")
+                        .requestMatchers(HttpMethod.GET, "/api/services/bookings/all").hasRole("ADMIN")
+
+
+                        // 4️⃣ Service endpoints (allow authenticated users)
+                        .requestMatchers("/api/services/**").authenticated()  // ✅ Add this line
+
+                        // 5️⃣ Catch-all: require authentication
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
