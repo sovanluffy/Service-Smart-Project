@@ -14,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -46,6 +47,11 @@ public class SecurityConfiguration {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
+                        //Category endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasRole("ADMIN")
 
                         // 2️⃣ Authenticated endpoints
                         .requestMatchers("/users/**").hasRole("ADMIN")
@@ -54,6 +60,15 @@ public class SecurityConfiguration {
                         // 3️⃣ Role-based endpoints
                         .requestMatchers(HttpMethod.GET, "/provider-requests/all").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/provider-requests/*/status").hasRole("ADMIN")
+
+                         // 3️⃣ Booking endpoints
+                        // Booking endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/services/*/bookings").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/api/services/bookings/my").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.PUT, "/api/services/bookings/*/accept").hasRole("PROVIDER")
+                        .requestMatchers(HttpMethod.PUT, "/api/services/bookings/*/reject").hasRole("PROVIDER")
+                        .requestMatchers(HttpMethod.GET, "/api/services/bookings/all").hasRole("ADMIN")
+
 
                         // 4️⃣ Service endpoints (allow authenticated users)
                         .requestMatchers("/api/services/**").authenticated()  // ✅ Add this line
@@ -70,6 +85,7 @@ public class SecurityConfiguration {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 );
+
 
         return http.build();
     }

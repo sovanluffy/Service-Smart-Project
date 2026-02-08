@@ -9,4 +9,10 @@ public interface CategoryService {
     CategoryResponse create(CategoryRequest categoryRequest);
 
     List<CategoryResponse> getAll();
+
+    CategoryResponse getById(Long id);
+
+    CategoryResponse update(Long id, CategoryRequest request);
+
+    void delete(Long id);
 }

@@ -1,5 +1,6 @@
 package com.rental_api.ServiceBooking.Security;
 
+import com.rental_api.ServiceBooking.Entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,10 @@ public class JwtUtils {
         }
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
         this.expiration = expiration;
+    }
+
+    public static User getCurrentUser() {
+        return null;
     }
 
     public String generateToken(
