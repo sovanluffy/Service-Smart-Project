@@ -8,9 +8,9 @@ import com.rental_api.ServiceBooking.Entity.User;
 import com.rental_api.ServiceBooking.Entity.Enum.BookingStatus;
 import com.rental_api.ServiceBooking.Repository.BookingRepository;
 import com.rental_api.ServiceBooking.Repository.ServiceRepository;
-import com.rental_api.ServiceBooking.Security.JwtUtils;
 import com.rental_api.ServiceBooking.Services.BookingService;
 import com.rental_api.ServiceBooking.Services.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -27,18 +27,12 @@ public class BookingServiceImpl implements BookingService {
     private final UserService userService;
 
     @Override
-    public BookingResponse createBooking(Long serviceId, BookingRequest request) {
+    public BookingResponse createBooking(Long serviceId, BookingRequest request, HttpServletRequest httpRequest) {
+        User customer = userService.getCurrentUser(httpRequest);
 
-        // Get logged-in customer
-        User customer = UserService.getCurrentUser();
-
-        // Get service
         ServiceEntity service = serviceRepository.findById(serviceId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Service not found"
-                ));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found"));
 
-        // Check if already booked
         boolean alreadyBooked = bookingRepository.existsByCustomerIdAndServiceIdAndStatusIn(
                 customer.getId(),
                 serviceId,
@@ -46,13 +40,9 @@ public class BookingServiceImpl implements BookingService {
         );
 
         if (alreadyBooked) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "You already booked this service. Please wait for confirmation."
-            );
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You already booked this service. Please wait for confirmation.");
         }
 
-        // Build and save booking
         Booking booking = Booking.builder()
                 .customer(customer)
                 .service(service)
@@ -67,8 +57,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponse> getMyBookings() {
-        User customer = UserService.getCurrentUser();
+    public List<BookingResponse> getMyBookings(HttpServletRequest httpRequest) {
+        User customer = userService.getCurrentUser(httpRequest);
 
         return bookingRepository.findByCustomerId(customer.getId())
                 .stream()
@@ -77,28 +67,34 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingResponse accept(Long bookingId) {
-        Booking booking = getBookingForProvider(bookingId);
+    public BookingResponse accept(Long bookingId, HttpServletRequest httpRequest) {
+        Booking booking = getBookingForProvider(bookingId, httpRequest);
         booking.setStatus(BookingStatus.CONFIRMED);
         bookingRepository.save(booking);
         return mapToResponse(booking);
     }
 
     @Override
-    public BookingResponse reject(Long bookingId) {
-        Booking booking = getBookingForProvider(bookingId);
+    public BookingResponse reject(Long bookingId, HttpServletRequest httpRequest) {
+        Booking booking = getBookingForProvider(bookingId, httpRequest);
         booking.setStatus(BookingStatus.REJECTED);
         bookingRepository.save(booking);
         return mapToResponse(booking);
     }
 
-    private Booking getBookingForProvider(Long bookingId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Booking not found"
-                ));
+    @Override
+    public List<BookingResponse> getAllBookings() {
+        return bookingRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 
-        User provider = UserService.getCurrentUser();
+    private Booking getBookingForProvider(Long bookingId, HttpServletRequest httpRequest) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+
+        User provider = userService.getCurrentUser(httpRequest);
 
         if (!booking.getService().getProvider().getId().equals(provider.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your booking");

@@ -4,108 +4,92 @@ import com.rental_api.ServiceBooking.Dto.Response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
-import com.rental_api.ServiceBooking.Exception.CategoryNotFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 404 - User Not Found
+    // ---------------- 404 NOT FOUND ----------------
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> userNotFound(UserNotFoundException ex) {
-        return ResponseEntity.status(404)
-                .body(ApiResponse.error(404, "Not Found", ex.getMessage()));
+        return buildResponse(404, "User Not Found", ex.getMessage());
     }
 
-    // 404 - Role Not Found
     @ExceptionHandler(RoleNotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> roleNotFound(RoleNotFoundException ex) {
-        return ResponseEntity.status(404)
-                .body(ApiResponse.error(404, "Not Found", ex.getMessage()));
-    }
-
-    // 401 - Unauthorized (custom)
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ApiResponse<Object>> unauthorized(UnauthorizedException ex) {
-        return ResponseEntity.status(401)
-                .body(ApiResponse.error(401, "Unauthorized", ex.getMessage()));
-    }
-
-    // 401 - Bad credentials (wrong email/password)
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponse<Object>> badCredentials(BadCredentialsException ex) {
-        return ResponseEntity.status(401)
-                .body(ApiResponse.error(401, "Unauthorized", ex.getMessage()));
-    }
-
-    // 409 - Conflict (e.g., email already exists)
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ApiResponse<Object>> conflict(ConflictException ex) {
-        return ResponseEntity.status(409)
-                .body(ApiResponse.error(409, "Conflict", ex.getMessage()));
-    }
-
-    // 400 - Invalid input (e.g., email format)
-    @ExceptionHandler(InvalidInputException.class)
-    public ResponseEntity<ApiResponse<Object>> invalidInput(InvalidInputException ex) {
-        return ResponseEntity.status(400)
-                .body(ApiResponse.error(400, "Bad Request", ex.getMessage()));
-    }
-
-    // 400 - Other runtime exceptions
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<Object>> badRequest(RuntimeException ex) {
-        return ResponseEntity.status(400)
-                .body(ApiResponse.error(400, "Bad Request", ex.getMessage()));
-    }
-
-    // 400 - Type mismatch (invalid path or query parameter)
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ApiResponse<Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String paramName = ex.getName();
-        String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
-        String message = String.format("Invalid value for parameter '%s'. Expected type: %s.", paramName, requiredType);
-
-        return ResponseEntity.status(400)
-                .body(ApiResponse.error(400, "Bad Request", message));
-    }
-
-    // 404 - Endpoint not found
-    @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleNoHandlerFound(NoHandlerFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(404, "Not Found",
-                        "Endpoint not found. Please check the URL or method."));
+        return buildResponse(404, "Role Not Found", ex.getMessage());
     }
 
     @ExceptionHandler(CategoryNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleCategoryNotFound(CategoryNotFoundException ex) {
-    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(ApiResponse.error(
-                    404,
-                    "Not Found",
-                    ex.getMessage()
-            ));
-    } 
+    public ResponseEntity<ApiResponse<Object>> categoryNotFound(CategoryNotFoundException ex) {
+        return buildResponse(404, "Category Not Found", ex.getMessage());
+    }
 
+    @ExceptionHandler(ServiceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> serviceNotFound(ServiceNotFoundException ex) {
+        return buildResponse(404, "Service Not Found", ex.getMessage());
+    }
 
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> endpointNotFound(NoHandlerFoundException ex) {
+        return buildResponse(404, "Endpoint Not Found", "The requested endpoint does not exist.");
+    }
 
-     @ExceptionHandler(ServiceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleServiceNotFound(ServiceNotFoundException ex) {
-    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(ApiResponse.error(
-                    404,
-                    "Not Found",
-                    ex.getMessage()
-            ));
-    } 
+    // ---------------- 401 UNAUTHORIZED ----------------
 
+    @ExceptionHandler({UnauthorizedException.class, BadCredentialsException.class})
+    public ResponseEntity<ApiResponse<Object>> unauthorized(Exception ex) {
+        return buildResponse(401, "Unauthorized", ex.getMessage());
+    }
 
-    
+    // ---------------- 409 CONFLICT ----------------
 
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiResponse<Object>> conflict(ConflictException ex) {
+        return buildResponse(409, "Conflict", ex.getMessage());
+    }
 
+    // ---------------- 400 BAD REQUEST ----------------
 
+    @ExceptionHandler({InvalidInputException.class, RuntimeException.class})
+    public ResponseEntity<ApiResponse<Object>> badRequest(Exception ex) {
+        return buildResponse(400, "Bad Request", ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Object>> typeMismatch(MethodArgumentTypeMismatchException ex) {
+        String paramName = ex.getName();
+        String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
+        String message = String.format("Invalid value for parameter '%s'. Expected type: %s.", paramName, requiredType);
+        return buildResponse(400, "Bad Request", message);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Object>> validationError(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors()
+                .stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .reduce((m1, m2) -> m1 + "; " + m2)
+                .orElse("Validation failed");
+        return buildResponse(400, "Validation Error", message);
+    }
+
+    // ---------------- 500 INTERNAL SERVER ERROR ----------------
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Object>> handleAll(Exception ex) {
+        return buildResponse(500, "Internal Server Error", ex.getMessage());
+    }
+
+    // ---------------- PRIVATE HELPER ----------------
+
+    private ResponseEntity<ApiResponse<Object>> buildResponse(int status, String error, String message) {
+        ApiResponse<Object> response = ApiResponse.error(status, error, message);
+        return ResponseEntity.status(status).body(response);
+    }
 }

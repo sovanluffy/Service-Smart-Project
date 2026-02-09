@@ -12,14 +12,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
-@Tag(name = "User", description = "User APIs")
+@Tag(name = "User", description = "User management APIs")
 public class UserController {
 
     private final UserService userService;
 
-    // GET all users
+    // ---------------- GET ALL USERS ----------------
     @GetMapping
     @Operation(summary = "Get all users", description = "Returns all users")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
@@ -33,7 +33,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // GET user by ID
+    // ---------------- GET USER BY ID ----------------
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID", description = "Returns user details by ID")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long id) {
@@ -47,12 +47,14 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // UPDATE user
+   
+    // ---------------- UPDATE USER ----------------
     @PutMapping("/{id}")
     @Operation(summary = "Update a user", description = "Updates user details by ID")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable Long id,
-            @RequestBody UserResponse updatedData) {
+            @RequestBody UserResponse updatedData
+    ) {
         UserResponse updatedUser = userService.updateUser(id, updatedData);
 
         ApiResponse<UserResponse> response = new ApiResponse<>();
@@ -63,7 +65,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // DELETE user
+    // ---------------- DELETE USER ----------------
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a user", description = "Deletes a user by ID")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {

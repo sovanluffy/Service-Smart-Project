@@ -64,10 +64,10 @@ public class SecurityConfiguration {
                          // 3️⃣ Booking endpoints
                         // Booking endpoints
                         .requestMatchers(HttpMethod.POST, "/api/services/*/bookings").hasRole("CUSTOMER")
-                        .requestMatchers(HttpMethod.GET, "/api/services/bookings/my").hasRole("CUSTOMER")
-                        .requestMatchers(HttpMethod.PUT, "/api/services/bookings/*/accept").hasRole("PROVIDER")
-                        .requestMatchers(HttpMethod.PUT, "/api/services/bookings/*/reject").hasRole("PROVIDER")
-                        .requestMatchers(HttpMethod.GET, "/api/services/bookings/all").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/my").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.PUT, "/api/bookings/*/accept").hasRole("PROVIDER")
+                        .requestMatchers(HttpMethod.PUT, "/api/bookings/*/reject").hasRole("PROVIDER")
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/all").hasRole("ADMIN")
 
 
                         // 4️⃣ Service endpoints (allow authenticated users)

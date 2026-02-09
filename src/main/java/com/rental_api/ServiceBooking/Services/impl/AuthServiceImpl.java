@@ -68,7 +68,37 @@ public class AuthServiceImpl implements AuthService {
         return buildAuthResponse(user, "Registered successfully");
     }
 
-    
+    // ------------------- REGISTER ADMIN -------------------
+    @Override
+    @Transactional
+    public AuthResponse registerAdmin(RegisterRequest request) {
+        log.info("Registering ADMIN: {}", request.getEmail());
+
+        validateEmail(request.getEmail());
+        checkEmailExists(request.getEmail());
+
+        User user = User.builder()
+                .fullname(request.getFullname())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .address(request.getAddress())
+                .location(request.getLocation())
+                .build();
+
+        Role adminRole = roleRepository.findByName("ADMIN")
+                .orElseGet(() -> {
+                    Role r = new Role();
+                    r.setName("ADMIN");
+                    r.setDescription("Default ADMIN role");
+                    return roleRepository.save(r);
+                });
+
+        user.setRoles(Set.of(adminRole));
+        user = userRepository.save(user);
+
+        return buildAuthResponse(user, "Admin registered successfully");
+    }
 
     // ------------------- LOGIN -------------------
     @Override

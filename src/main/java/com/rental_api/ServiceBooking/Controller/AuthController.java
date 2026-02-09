@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,6 +20,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    // ------------------- REGISTER CUSTOMER -------------------
     @PostMapping("/register")
     @Operation(summary = "Register a customer", description = "Registers a new customer account")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@RequestBody RegisterRequest request) {
@@ -32,8 +34,22 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    
+    // ------------------- REGISTER ADMIN -------------------
+    @PostMapping("/admin/register")
+ // Only admins can register other admins
+    @Operation(summary = "Register an admin", description = "Registers a new admin account")
+    public ResponseEntity<ApiResponse<AuthResponse>> registerAdmin(@RequestBody RegisterRequest request) {
+        AuthResponse authResponse = authService.registerAdmin(request);
 
+        ApiResponse<AuthResponse> response = new ApiResponse<>();
+        response.setStatus(200);
+        response.setMessage("Admin registered successfully");
+        response.setData(authResponse);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ------------------- LOGIN -------------------
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Authenticate user and return JWT")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest request) {
@@ -47,6 +63,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    // ------------------- LOGOUT -------------------
     @PostMapping("/logout")
     @Operation(summary = "Logout", description = "Logs out the current user")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authHeader) {

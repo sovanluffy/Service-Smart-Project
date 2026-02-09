@@ -1,45 +1,65 @@
 package com.rental_api.ServiceBooking.Controller;
 
 import com.rental_api.ServiceBooking.Dto.Request.BookingRequest;
+import com.rental_api.ServiceBooking.Dto.Response.ApiResponse;
 import com.rental_api.ServiceBooking.Dto.Response.BookingResponse;
 import com.rental_api.ServiceBooking.Services.BookingService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/services")
+@RequestMapping("/api/bookings")
 @RequiredArgsConstructor
 public class BookingController {
 
     private final BookingService bookingService;
 
-    // CUSTOMER
+    // Create a booking for a service
     @PostMapping("/{serviceId}/bookings")
-    @PreAuthorize("hasRole('CUSTOMER')")
-    public BookingResponse createBooking(@PathVariable Long serviceId,
-                                         @RequestBody BookingRequest request) {
-        return bookingService.createBooking(serviceId, request);
+    public ResponseEntity<ApiResponse<BookingResponse>> createBooking(
+            @PathVariable Long serviceId,
+            @RequestBody BookingRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        BookingResponse response = bookingService.createBooking(serviceId, request, httpRequest);
+        return ResponseEntity.ok(ApiResponse.success(response, "Booking created successfully"));
     }
 
+    // Get current user's bookings
     @GetMapping("/bookings/my")
-    @PreAuthorize("hasRole('CUSTOMER')")
-    public List<BookingResponse> myBookings() {
-        return bookingService.getMyBookings();
+    public ResponseEntity<ApiResponse<List<BookingResponse>>> getMyBookings(HttpServletRequest httpRequest) {
+        List<BookingResponse> bookings = bookingService.getMyBookings(httpRequest);
+        return ResponseEntity.ok(ApiResponse.success(bookings, "My bookings retrieved"));
     }
 
-    // PROVIDER
-    @PutMapping("/bookings/{id}/accept")
-    @PreAuthorize("hasRole('PROVIDER')")
-    public BookingResponse accept(@PathVariable Long id) {
-        return bookingService.accept(id);
+    // Accept a booking (for provider)
+    @PutMapping("/bookings/{bookingId}/accept")
+    public ResponseEntity<ApiResponse<BookingResponse>> acceptBooking(
+            @PathVariable Long bookingId,
+            HttpServletRequest httpRequest
+    ) {
+        BookingResponse response = bookingService.accept(bookingId, httpRequest);
+        return ResponseEntity.ok(ApiResponse.success(response, "Booking accepted"));
     }
 
-    @PutMapping("/bookings/{id}/reject")
-    @PreAuthorize("hasRole('PROVIDER')")
-    public BookingResponse reject(@PathVariable Long id) {
-        return bookingService.reject(id);
+    // Reject a booking (for provider)
+    @PutMapping("/bookings/{bookingId}/reject")
+    public ResponseEntity<ApiResponse<BookingResponse>> rejectBooking(
+            @PathVariable Long bookingId,
+            HttpServletRequest httpRequest
+    ) {
+        BookingResponse response = bookingService.reject(bookingId, httpRequest);
+        return ResponseEntity.ok(ApiResponse.success(response, "Booking rejected"));
+    }
+
+    // Get all bookings (for admin)
+    @GetMapping("/bookings/all")
+    public ResponseEntity<ApiResponse<List<BookingResponse>>> getAllBookings() {
+        List<BookingResponse> bookings = bookingService.getAllBookings();
+        return ResponseEntity.ok(ApiResponse.success(bookings, "All bookings retrieved"));
     }
 }

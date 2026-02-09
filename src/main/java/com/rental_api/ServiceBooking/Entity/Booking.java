@@ -3,12 +3,12 @@ package com.rental_api.ServiceBooking.Entity;
 import com.rental_api.ServiceBooking.Entity.Enum.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bookings")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -18,31 +18,19 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // CUSTOMER
     @ManyToOne
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false) // matches DB column
     private User customer;
 
-    // SERVICE
     @ManyToOne
     @JoinColumn(name = "service_id", nullable = false)
     private ServiceEntity service;
 
-    @Column(nullable = false)
+    @Column(name = "booking_date_time", nullable = false)
     private LocalDateTime bookingDateTime;
-
-    @Enumerated(EnumType.STRING)
-    private BookingStatus status;
 
     private String note;
 
-    @PrePersist
-    public void prePersist() {
-        if (status == null) {
-            status = BookingStatus.PENDING;
-        }
-        if (bookingDateTime == null) {
-            bookingDateTime = LocalDateTime.now();
-        }
-    }
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status;
 }
